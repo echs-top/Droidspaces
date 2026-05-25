@@ -6,10 +6,6 @@ on:
       - action # 当 action 分支有代码推送时自动触发
   workflow_dispatch: # 允许在 GitHub Actions 页面手动点击触发
 
-permissions:
-  contents: write   # 允许强制推送到 main 分支
-  actions: write    # 【修正】允许机器人推送和更新 .github/workflows 目录下的工作流文件
-
 jobs:
   rebuild-main:
     runs-on: ubuntu-latest
@@ -64,6 +60,6 @@ jobs:
           # 提交本地修改
           git commit -m "Auto-rebuild main branch from action trigger ($(date +'%Y-%m-%d %H:%M:%S'))"
           
-          # 关联当前仓库的远程地址，并强制推送覆盖远程 main 分支
-          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          # 【核心修改】：使用你拥有最高控制权的 PAT_TOKEN 代替原有的 GITHUB_TOKEN 强推
+          git remote add origin "https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git"
           git push -f origin main
