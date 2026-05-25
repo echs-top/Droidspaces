@@ -37,9 +37,9 @@ RUN apt-get update && \
     iputils-ping \
     iproute2 \
     # FTP
-    vsftpd
+    vsftpd \
     # SSH
-    dropbear
+    dropbear \
     # Procps for system monitoring
     procps \
     # Essential kernel module support
