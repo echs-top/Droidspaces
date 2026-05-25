@@ -1,5 +1,5 @@
-# Dockerfile (Alpine Linux Minimal)
-# Stage 1: Build and customize the rootfs for development (Minimal - Alpine Linux)
+# Dockerfile (Alpine Linux Lite)
+# Stage 1: Build and customize the rootfs for development (Lite - Alpine Linux)
 ARG TARGETPLATFORM
 FROM alpine:3.23 AS customizer
 
@@ -10,14 +10,16 @@ RUN apk update && apk upgrade && \
     curl \
     wget \
     ca-certificates \
+    zstd \
     tzdata \
     shadow \
-    sudo \
     # Networking
     iptables-legacy \
     # DHCP client + openrc
     openrc \
     busybox-extras \
+    # SSH
+    dropbear
     # FTP
     vsftpd \
     && rm -rf /var/cache/apk/*
@@ -75,6 +77,8 @@ echo -e "auto eth0\niface eth0 inet dhcp" > /etc/network/interfaces
 mkdir -p /etc/runlevels/default
 ln -sf /etc/init.d/networking /etc/runlevels/default/networking
 
+# nat network
+sed -i '/start()/i start_pre() {\n\tif ! grep -q "net_mode=nat" /run/droidspaces/container.config 2>/dev/null; then\n\t\teinfo "Skipping native networking: not in NAT network mode"\n\t\treturn 1\n\tfi\n}\n' /etc/init.d/networking
 
 # Mark fixes as completed
 echo "Post-extraction fixes applied on $(date)" > /etc/droidspaces
@@ -97,6 +101,9 @@ listen=YES
 listen_port=21
 EOF
 ln -sf /etc/init.d/vsftpd /etc/runlevels/default/vsftpd
+
+# SSH
+ln -sf /etc/init.d/dropbear /etc/runlevels/default/dropbear
 
 EOF_RUN
 
