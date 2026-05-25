@@ -44,8 +44,6 @@ RUN apt-get update && \
     procps \
     # Essential kernel module support
     kmod \
-    # 内存分配器
-    libjemalloc2 \
     && apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -104,16 +102,6 @@ if [ -f /etc/adduser.conf ]; then
 fi
 
 # --- 2. Systemd-Specific Fixes ---
-
-# 全局 jemalloc 内存分配器
-JEMALLOC_PATH=$(find /usr/lib -name "libjemalloc.so.2" | head -n 1)
-if [ -n "$JEMALLOC_PATH" ]; then
-    echo "DefaultEnvironment=\"LD_PRELOAD=$JEMALLOC_PATH\"" >> /etc/systemd/system.conf
-    mkdir -p /etc/profile.d
-    echo "export LD_PRELOAD=\"$JEMALLOC_PATH\"" > /etc/profile.d/ds-jemalloc.sh
-    chmod +x /etc/profile.d/ds-jemalloc.sh
-fi
-
 # Mask problematic services for Android kernels
 ln -sf /dev/null /etc/systemd/system/systemd-networkd-wait-online.service
 ln -sf /dev/null /etc/systemd/system/systemd-journald-audit.socket
