@@ -26,6 +26,7 @@ RUN apt-get update && \
     curl \
     wget \
     ca-certificates \
+    zstd \
     locales \
     udev \
     dbus \
@@ -35,6 +36,10 @@ RUN apt-get update && \
     iptables \
     iputils-ping \
     iproute2 \
+    # FTP
+    vsftpd
+    # SSH
+    dropbear
     # Procps for system monitoring
     procps \
     # Essential kernel module support
@@ -204,10 +209,12 @@ trans_chunk_size=131072
 listen=YES
 listen_port=21
 VEOF
-if [ -f /etc/ftpusers ]; then
-    sed -i '/^root$/d' /etc/ftpusers
-fi
+sed -i '/^root$/d' /etc/ftpusers
 ln -sf /lib/systemd/system/vsftpd.service /etc/systemd/system/multi-user.target.wants/vsftpd.service
+
+# SSH
+ln -sf /lib/systemd/system/dropbear.service /etc/systemd/system/multi-user.target.wants/dropbear.service
+
 EOF_RUN
 
 # Copy binfmt scripts
