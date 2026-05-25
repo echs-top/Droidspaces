@@ -19,7 +19,7 @@ RUN apk update && apk upgrade && \
     openrc \
     busybox-extras \
     # SSH
-    dropbear
+    dropbear \
     # FTP
     vsftpd \
     && rm -rf /var/cache/apk/*
