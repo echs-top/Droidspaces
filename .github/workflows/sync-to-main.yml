@@ -18,24 +18,30 @@ jobs:
           ref: action
           path: current-action-repo
 
-      # 2. 正确拉取外部的目标仓库到指定的 /Droidspaces 文件夹
+      # 2. 拉取外部的目标仓库到指定的 /Droidspaces 文件夹
       - name: Clone External Repository
         run: |
           git clone https://github.com/Droidspaces/Droidspaces-rootfs-builder.git Droidspaces
 
-      # 3 & 4. 自动替换 Dockerfile 并将当前 Action 脚本自身备份至目标目录
+      # 3 & 4. 自动替换 Dockerfile 并在本地对目标 Action 文件进行“外科手术”
       - name: Process Files and Keep Workflow
         run: |
-          # 删除外部 Droidspaces 文件夹中原本自带的 *.Dockerfile 文件
+          # 1. 删除外部 Droidspaces 文件夹中原本自带的 *.Dockerfile 文件
           rm -f Droidspaces/*.Dockerfile
           
-          # 自动把你 action 分支根目录下的任何 .Dockerfile 复制到 Droidspaces 文件夹中
+          # 2. 自动把你 action 分支根目录下的任何 .Dockerfile 复制到 Droidspaces 文件夹中
           cp current-action-repo/*.Dockerfile Droidspaces/
           
-          # 确保 Droidspaces 文件夹中存在 .github/workflows 目录
+          # 3. 确保 Droidspaces 文件夹中存在 .github/workflows 目录
           mkdir -p Droidspaces/.github/workflows
           
-          # 将此工作流文件自身复制过去，确保覆盖后的 main 分支也常驻此文件，从而激活网页端手动按钮
+          # 4. 【核心修复】：动态剔除外部工作流中写死的 NixOS 任务，并修改 release 的依赖
+          # 使用 yq 强行删掉 jobs.build-nixos，并将 release 任务的 needs 改为仅依赖 setup 和 build
+          if [ -f "Droidspaces/.github/workflows/build-rootfs-releases.yml" ]; then
+            yq eval 'del(.jobs.build-nixos) | .jobs.release.needs = ["setup", "build"]' -i Droidspaces/.github/workflows/build-rootfs-releases.yml
+          fi
+          
+          # 5. 将此同步工作流文件自身复制过去，确保覆盖后的 main 分支也常驻此文件
           cp current-action-repo/.github/workflows/sync-to-main.yml Droidspaces/.github/workflows/
 
       # 5. 清空旧 main 分支并用全新内容强制覆盖
@@ -54,12 +60,12 @@ jobs:
           # 创建并切换到 main 分支
           git checkout -b main
           
-          # 暂存所有文件（外部仓库原本的文件、隐藏的 workflows 文件夹、以及你刚复制进去的 Dockerfile）
+          # 暂存所有文件（外部仓库处理后的文件、精简后的工作流、以及你刚复制进去的 Dockerfile）
           git add -A
           
           # 提交本地修改
           git commit -m "Auto-rebuild main branch from action trigger ($(date +'%Y-%m-%d %H:%M:%S'))"
           
-          # 【核心修改】：使用你拥有最高控制权的 PAT_TOKEN 代替原有的 GITHUB_TOKEN 强推
+          # 使用已配置好最高 workflow 权限的 PAT_TOKEN 强制推送覆盖远程 main 分支
           git remote add origin "https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git"
           git push -f origin main
