@@ -22,6 +22,8 @@ RUN apk update && apk upgrade && \
     dropbear \
     # FTP
     vsftpd \
+    # 内存分配器
+    mimalloc \
     && rm -rf /var/cache/apk/*
 
 # Copy custom scripts
@@ -57,6 +59,14 @@ ln -sf /usr/sbin/ebtables-legacy /sbin/ebtables
 # by Droidspaces before init runs, so OpenRC never tries to manage them
 # anyway - rc_sys="lxc" just stops it from complaining about their absence.
 sed -i 's/^#\?rc_sys=.*/rc_sys="lxc"/' /etc/rc.conf
+
+# 全局mimalloc内存分配器
+echo 'export LD_PRELOAD="/usr/lib/libmimalloc.so"' >> /etc/rc.conf
+echo 'rc_env_allow="LD_PRELOAD"' >> /etc/rc.conf
+mkdir -p /etc/profile.d
+echo 'export LD_PRELOAD="/usr/lib/libmimalloc.so"' > /etc/profile.d/ds-mimalloc.sh
+chmod +x /etc/profile.d/ds-mimalloc.sh
+
 
 # Remove "dev" dependency from machine-id init script to prevent boot warnings
 if [ -f /etc/init.d/machine-id ]; then
