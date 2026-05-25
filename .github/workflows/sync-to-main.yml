@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: write   # 允许强制推送到 main 分支
-  workflows: write  # 【新增】允许机器人推送和更新 .github/workflows 目录下的其他工作流文件
+  actions: write    # 【修正】允许机器人推送和更新 .github/workflows 目录下的工作流文件
 
 jobs:
   rebuild-main:
