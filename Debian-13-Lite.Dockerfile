@@ -166,6 +166,18 @@ EOF
     fi
 done
 
+# Limit udev services to only start if hardware access is enabled
+for unit in systemd-udevd.service systemd-udev-trigger.service systemd-udev-settle.service; do
+    if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
+        mkdir -p "/etc/systemd/system/${unit}.d"
+        cat > "/etc/systemd/system/${unit}.d/99-hwaccess-limit.conf" << 'EOF'
+[Service]
+ExecCondition=
+ExecCondition=/bin/sh -c "grep -q 'enable_hw_access=1' /run/droidspaces/container.config"
+EOF
+    fi
+done
+
 # Configure logrotate for Android
 if [ -f /etc/logrotate.conf ]; then
     sed -i 's/^#maxsize.*/maxsize 50M/' /etc/logrotate.conf
