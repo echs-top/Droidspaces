@@ -7,7 +7,8 @@ on:
   workflow_dispatch: # 允许在 GitHub Actions 页面手动点击触发
 
 permissions:
-  contents: write # 赋予写入权限，用于强制推送到 main 分支
+  contents: write   # 允许强制推送到 main 分支
+  workflows: write  # 【新增】允许机器人推送和更新 .github/workflows 目录下的其他工作流文件
 
 jobs:
   rebuild-main:
@@ -33,7 +34,6 @@ jobs:
           rm -f Droidspaces/*.Dockerfile
           
           # 自动把你 action 分支根目录下的任何 .Dockerfile 复制到 Droidspaces 文件夹中
-          # 使用 *.Dockerfile 这样你就完全不用手动修改“前缀”这两个字了
           cp current-action-repo/*.Dockerfile Droidspaces/
           
           # 确保 Droidspaces 文件夹中存在 .github/workflows 目录
