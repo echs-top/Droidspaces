@@ -3,18 +3,18 @@ name: Sync and Rebuild Main Branch
 on:
   push:
     branches:
-      - action # 当 action 分支有代码推送时自动触发
-  workflow_dispatch: # 允许在 GitHub Actions 页面手动点击触发
+      - action # 当 action 分支有代码推送时触发
+  workflow_dispatch: # 允许你在 GitHub 页面上手动点击触发
 
 permissions:
-  contents: write # 必须赋予写入权限，否则机器人无法强制推送到 main 分支
+  contents: write # 必须赋予写入权限，否则无法推送到 main 分支
 
 jobs:
   rebuild-main:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 拉取当前仓库的 action 分支（为了获取你存放的 “前缀.Dockerfile”）
+      # 1. 拉取当前仓库的 action 分支（获取你存放的 “前缀.Dockerfile”）
       - name: Checkout Current Action Branch
         uses: actions/checkout@v4
         with:
@@ -26,44 +26,37 @@ jobs:
         run: |
           git clone https://github.com/Droidspaces/Droidspaces-rootfs-builder.git builder-folder
 
-      # 3 & 4. 替换 Dockerfile 并将当前 Action 脚本自身备份至目标目录
-      - name: Process Files and Keep Workflow
+      # 3. 删除外部仓库中的 “前缀.Dockerfile”
+      # 4. 从 action 分支把最新的 “前缀.Dockerfile” 复制过去
+      - name: Replace Dockerfile
         run: |
-          # 删除外部仓库中原本的 “前缀.Dockerfile”
-          # （注：请根据你实际的文件名替换下面的 “前缀.Dockerfile”）
+          # 如果你的“前缀”是某种特定格式（如 *.Dockerfile），可以自行修改下面这行
           rm -f builder-folder/前缀.Dockerfile
           
-          # 将当前 action 分支根目录下的 “前缀.Dockerfile” 复制到目标文件夹
+          # 将 action 分支根目录的 Dockerfile 复制到新仓库中
           cp current-action-repo/前缀.Dockerfile builder-folder/
-          
-          # 确保目标文件夹中存在 .github/workflows 目录（容错处理）
-          mkdir -p builder-folder/.github/workflows
-          
-          # 将此工作流文件自身复制过去，确保覆盖后的 main 分支也常驻此文件，从而激活网页端手动运行按钮
-          cp current-action-repo/.github/workflows/sync-to-main.yml builder-folder/.github/workflows/
 
-      # 5. 清空旧 main 分支并用全新内容强制覆盖
+      # 5. 清空并强制覆盖远程 main 主分支
       - name: Initialize New Git and Push to Main
         run: |
           cd builder-folder
           
-          # 关键：切断外部仓库原本的 Git 历史（删除 .git 文件夹），使其变成纯文件
+          # 关键点：删掉外部仓库原本的 .git 历史，使其变成一个纯粹的文件夹
           rm -rf .git
           
-          # 重新初始化一个全新的本地 Git 仓库
+          # 重新初始化本地 Git
           git init
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 创建并切换到 main 分支
+          # 切换到 main 分支
           git checkout -b main
           
-          # 暂存所有文件（外部仓库原本的文件、隐藏的 workflows 文件夹、以及你替换的 Dockerfile 都会被整体打包）
+          # 将所有文件（包含外部仓库自带的 .github/workflows）全部提交
+          # 因为重新 init 了，这一步会自动达成“清空旧 main 并完全替换”的效果
           git add -A
-          
-          # 提交本地修改
           git commit -m "Auto-rebuild main branch from action trigger ($(date +'%Y-%m-%d %H:%M:%S'))"
           
-          # 关联当前仓库的远程地址，并使用内置的 GITHUB_TOKEN 强制推送覆盖远程 main 分支
+          # 使用 GITHUB_TOKEN 鉴权并强制推送到当前仓库的 main 分支
           git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
           git push -f origin main
