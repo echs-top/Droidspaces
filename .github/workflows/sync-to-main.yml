@@ -18,6 +18,16 @@ jobs:
           ref: action
           path: current-action-repo
 
+      # 【核心新增】1.5 提前备份当前主仓库 main 分支的 README.md
+      - name: Backup Current Main README
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            README.md
+          path: current-main-readme
+        continue-on-error: true # 设置为 true 防止首次运行或 main 分支为空时导致整个工作流报错中断
+
       # 2. 拉取外部的目标仓库到指定的 /Droidspaces 文件夹
       - name: Clone External Repository
         run: |
@@ -36,13 +46,22 @@ jobs:
           mkdir -p Droidspaces/.github/workflows
           
           # 4. 【核心修复】：动态剔除外部工作流中写死的 NixOS 任务，并修改 release 的依赖
-          # 使用 yq 强行删掉 jobs.build-nixos，并将 release 任务的 needs 改为仅依赖 setup 和 build
           if [ -f "Droidspaces/.github/workflows/build-rootfs-releases.yml" ]; then
             yq eval 'del(.jobs.build-nixos) | .jobs.release.needs = ["setup", "build"]' -i Droidspaces/.github/workflows/build-rootfs-releases.yml
           fi
           
           # 5. 将此同步工作流文件自身复制过去，确保覆盖后的 main 分支也常驻此文件
           cp current-action-repo/.github/workflows/sync-to-main.yml Droidspaces/.github/workflows/
+
+          # 【核心新增】6. 把备份的 README.md 强行覆盖回 Droidspaces 目录
+          if [ -f "current-main-readme/README.md" ]; then
+            cp current-main-readme/README.md Droidspaces/README.md
+            echo "成功恢复并保留了 main 分支的原生 README.md"
+          elif [ -f "current-action-repo/README.md" ]; then
+            # 容错：如果 main 分支是空的没拿到，则退而求其次使用 action 分支下的 README.md
+            cp current-action-repo/README.md Droidspaces/README.md
+            echo "未在新 main 分支检测到 README，已使用 action 分支的 README.md 顶替"
+          fi
 
       # 5. 清空旧 main 分支并用全新内容强制覆盖
       - name: Initialize New Git and Push to Main
@@ -60,7 +79,7 @@ jobs:
           # 创建并切换到 main 分支
           git checkout -b main
           
-          # 暂存所有文件（外部仓库处理后的文件、精简后的工作流、以及你刚复制进去的 Dockerfile）
+          # 暂存所有文件（此时这里的 README.md 已经是你原本保留的内容了）
           git add -A
           
           # 提交本地修改
