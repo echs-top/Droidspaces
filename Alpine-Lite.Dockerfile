@@ -18,8 +18,6 @@ RUN apk update && apk upgrade && \
     # DHCP client + openrc
     openrc \
     busybox-extras \
-    # SSH
-    dropbear \
     # FTP
     vsftpd \
     # 内存分配器
@@ -105,9 +103,6 @@ listen=YES
 listen_port=21
 EOF
 ln -sf /etc/init.d/vsftpd /etc/runlevels/default/vsftpd
-
-# SSH
-ln -sf /etc/init.d/dropbear /etc/runlevels/default/dropbear
 
 EOF_RUN
 
