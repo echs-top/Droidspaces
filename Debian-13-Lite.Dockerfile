@@ -38,8 +38,6 @@ RUN apt-get update && \
     iproute2 \
     # FTP
     vsftpd \
-    # SSH
-    dropbear \
     # 内存分配器
     libjemalloc2 \
     libmimalloc3 \
@@ -214,9 +212,6 @@ listen_port=21
 VEOF
 sed -i '/^root$/d' /etc/ftpusers
 ln -sf /lib/systemd/system/vsftpd.service /etc/systemd/system/multi-user.target.wants/vsftpd.service
-
-# SSH
-ln -sf /lib/systemd/system/dropbear.service /etc/systemd/system/multi-user.target.wants/dropbear.service
 
 EOF_RUN
 
