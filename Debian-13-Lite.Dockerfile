@@ -40,6 +40,9 @@ RUN apt-get update && \
     vsftpd \
     # SSH
     dropbear \
+    # 内存分配器
+    libjemalloc2 \
+    libmimalloc3 \
     # Procps for system monitoring
     procps \
     # Essential kernel module support
