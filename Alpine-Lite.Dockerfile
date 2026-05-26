@@ -22,6 +22,9 @@ RUN apk update && apk upgrade && \
     dropbear \
     # FTP
     vsftpd \
+    # 内存分配器
+    jemalloc \
+    mimalloc \
     && rm -rf /var/cache/apk/*
 
 # Copy custom scripts
