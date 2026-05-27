@@ -53,14 +53,10 @@ RUN apt-get update && \
 RUN update-alternatives --set iptables /usr/sbin/iptables-legacy && \
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 
-# Configure locales, environment, SSH, and user setup
+# Configure locales, environment, and user setup
 RUN sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen && \
     locale-gen && \
     update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 && \
-    # Configure SSH (Disable Root Login)
-    mkdir -p /var/run/sshd && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config && \
-    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
     # Remove default user if it exists
     deluser --remove-home debian || true
 
@@ -168,18 +164,6 @@ for unit in systemd-resolved.service systemd-networkd.service; do
 [Service]
 ExecCondition=
 ExecCondition=/bin/sh -c "grep -q 'net_mode=nat' /run/droidspaces/container.config"
-EOF
-    fi
-done
-
-# Limit udev services to only start if hardware access is enabled
-for unit in systemd-udevd.service systemd-udev-trigger.service systemd-udev-settle.service systemd-udevd-control.socket systemd-udevd-kernel.socket; do
-    if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
-        mkdir -p "/etc/systemd/system/${unit}.d"
-        cat > "/etc/systemd/system/${unit}.d/99-hwaccess-limit.conf" << 'EOF'
-[Service]
-ExecCondition=
-ExecCondition=/bin/sh -c "grep -q 'enable_hw_access=1' /run/droidspaces/container.config"
 EOF
     fi
 done
