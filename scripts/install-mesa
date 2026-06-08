@@ -1,0 +1,106 @@
+#!/bin/bash
+
+set -e
+
+REPO="lfdevs/mesa-for-android-container"
+API_URL="https://api.github.com/repos/${REPO}/releases/latest"
+
+# Must run as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Error: This script must be run as root (or with sudo)."
+    exit 1
+fi
+
+# Detect OS
+if [ ! -f /etc/os-release ]; then
+    echo "Error: /etc/os-release not found."
+    exit 1
+fi
+
+. /etc/os-release
+
+case "${ID}:${VERSION_CODENAME}" in
+    ubuntu:noble)   DISTRO_TAG="ubuntu_noble" ;;
+    debian:trixie)  DISTRO_TAG="debian_trixie" ;;
+    *)
+        echo "Error: Unsupported OS: ${PRETTY_NAME:-${ID}}"
+        echo "Only Ubuntu 24.04 (noble) and Debian 13 (trixie) are supported."
+        exit 1
+        ;;
+esac
+
+# Detect architecture
+case "$(uname -m)" in
+    aarch64) ARCH_TAG="arm64" ;;
+    *)
+        echo "Error: Unsupported architecture: $(uname -m). Only arm64 is supported."
+        exit 1
+        ;;
+esac
+
+MESA_PACKAGES="libgl1-mesa-dri libglx-mesa0 libegl-mesa0 mesa-vulkan-drivers mesa-utils libgbm1"
+
+echo "Detected: ${PRETTY_NAME} (${ARCH_TAG})"
+
+# Install system mesa packages first so dependencies are always satisfied
+echo "Installing system mesa packages..."
+apt-get update
+apt-get install -y --no-install-recommends python3 $MESA_PACKAGES
+
+echo "Fetching latest release info from ${REPO}..."
+
+# Fetch and parse the download URL using python3
+DOWNLOAD_URL=$(python3 - <<EOF
+import urllib.request, json, sys
+
+try:
+    with urllib.request.urlopen("${API_URL}") as r:
+        data = json.load(r)
+except Exception as e:
+    print(f"Error fetching release info: {e}", file=sys.stderr)
+    sys.exit(1)
+
+tag = data.get("tag_name", "unknown")
+print(f"Latest release: {tag}", file=sys.stderr)
+
+pattern = "${DISTRO_TAG}_${ARCH_TAG}"
+for asset in data.get("assets", []):
+    name = asset.get("name", "")
+    if pattern in name and name.endswith((".tar.gz", ".tar")):
+        print(asset["browser_download_url"])
+        sys.exit(0)
+
+print(f"Error: No asset found matching '{pattern}'", file=sys.stderr)
+sys.exit(1)
+EOF
+)
+
+FILENAME=$(basename "$DOWNLOAD_URL")
+echo "Found: ${FILENAME}"
+
+# Download to a temp dir, clean up on exit
+TMPDIR=$(mktemp -d)
+trap 'rm -rf "$TMPDIR"' EXIT
+
+echo "Downloading..."
+curl -fL --progress-bar -o "${TMPDIR}/${FILENAME}" "$DOWNLOAD_URL"
+
+echo "Extracting to /..."
+case "$FILENAME" in
+    *.tar.gz) tar -zxf "${TMPDIR}/${FILENAME}" -C / ;;
+    *.tar)    tar -xf  "${TMPDIR}/${FILENAME}" -C / ;;
+    *)
+        echo "Error: Unknown archive format: ${FILENAME}"
+        exit 1
+        ;;
+esac
+
+echo "Running ldconfig..."
+ldconfig
+
+# Hold system mesa packages so apt won't upgrade/reinstall and overwrite custom files
+# (packages stay installed so dependencies remain satisfied)
+echo "Holding system mesa packages in APT..."
+apt-mark hold $MESA_PACKAGES
+
+echo "Done. Mesa installed successfully."
