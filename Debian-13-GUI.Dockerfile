@@ -22,6 +22,7 @@ RUN chmod +x /usr/local/bin/download-firmware /etc/profile.d/ds-aliases.sh
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # Core utilities
+    bash \
     file \
     curl \
     wget \
@@ -32,6 +33,7 @@ RUN apt-get update && \
     dbus \
     systemd-sysv \
     systemd-resolved \
+    sudo \
     # Networking
     iptables \
     iputils-ping \
@@ -175,6 +177,7 @@ for unit in systemd-udevd.service systemd-udev-trigger.service systemd-udev-sett
 done
 
 # Limit specific network services to only start in NAT mode
+# Prevents cellular network breakage when running in host network mode
 for unit in systemd-resolved.service systemd-networkd.service; do
     if [ -f "$GUEST_SYSTEMD_PATH/$unit" ] || [ -f "/etc/systemd/system/multi-user.target.wants/$unit" ]; then
         mkdir -p "/etc/systemd/system/${unit}.d"

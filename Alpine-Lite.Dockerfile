@@ -7,14 +7,18 @@ FROM alpine:3.23 AS customizer
 RUN apk update && apk upgrade && \
     apk add \
     # Core utilities
+    bash \
+    file \
     curl \
     wget \
     ca-certificates \
     zstd \
     tzdata \
     shadow \
+    sudo \
     # Networking
     iptables-legacy \
+    iproute2 \
     # DHCP client + openrc
     openrc \
     busybox-extras \
@@ -59,7 +63,6 @@ ln -sf /usr/sbin/ebtables-legacy /sbin/ebtables
 # anyway - rc_sys="lxc" just stops it from complaining about their absence.
 sed -i 's/^#\?rc_sys=.*/rc_sys="lxc"/' /etc/rc.conf
 
-
 # Remove "dev" dependency from machine-id init script to prevent boot warnings
 if [ -f /etc/init.d/machine-id ]; then
     sed -i 's/need root dev/need root/' /etc/init.d/machine-id
@@ -80,11 +83,10 @@ mkdir -p /etc/runlevels/default
 ln -sf /etc/init.d/networking /etc/runlevels/default/networking
 
 # nat network
-sed -i '/start()/i start_pre() {\n\tif ! grep -q "net_mode=nat" /run/droidspaces/container.config 2>/dev/null; then\n\t\teinfo "Skipping native networking: not in NAT network mode"\n\t\treturn 1\n\tfi\n}\n' /etc/init.d/networking
+sed -i '/start() {/a \	if ! grep -q "net_mode=nat" /run/droidspaces/container.config 2>/dev/null; then\n\t\teinfo "Skipping native networking: not in NAT network mode"\n\t\treturn 0\n\tfi' /etc/init.d/networking
 
 # Mark fixes as completed
 echo "Post-extraction fixes applied on $(date)" > /etc/droidspaces
-
 
 # FTP vsftpd
 mkdir -p /etc/vsftpd

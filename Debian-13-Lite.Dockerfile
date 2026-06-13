@@ -22,6 +22,7 @@ RUN chmod +x /usr/local/bin/download-firmware /etc/profile.d/ds-aliases.sh
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # Core utilities
+    bash \
     file \
     curl \
     wget \
@@ -32,6 +33,7 @@ RUN apt-get update && \
     dbus \
     systemd-sysv \
     systemd-resolved \
+    sudo \
     # Networking
     iptables \
     iputils-ping \
