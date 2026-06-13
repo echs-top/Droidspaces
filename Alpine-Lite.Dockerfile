@@ -11,6 +11,7 @@ RUN apk update && apk upgrade && \
     file \
     curl \
     wget \
+    git \
     ca-certificates \
     zstd \
     tzdata \

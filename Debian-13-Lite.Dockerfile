@@ -26,6 +26,7 @@ RUN apt-get update && \
     file \
     curl \
     wget \
+    git \
     ca-certificates \
     zstd \
     locales \
