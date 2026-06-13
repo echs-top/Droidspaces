@@ -1,7 +1,7 @@
 # Dockerfile (Alpine Linux Lite)
 # Stage 1: Build and customize the rootfs for development (Lite - Alpine Linux)
 ARG TARGETPLATFORM
-FROM alpine:3.23 AS customizer
+FROM alpine:latest AS customizer
 
 # Install key packages
 RUN apk update && apk upgrade && \
