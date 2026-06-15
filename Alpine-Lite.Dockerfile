@@ -8,15 +8,10 @@ RUN apk update && apk upgrade && \
     apk add \
     # Core utilities
     bash \
-    file \
-    curl \
-    wget \
-    git \
     ca-certificates \
-    zstd \
     tzdata \
-    shadow \
-    sudo \
+    bash-completion \
+    zstd \
     # Networking
     iptables-legacy \
     iproute2 \
@@ -25,9 +20,6 @@ RUN apk update && apk upgrade && \
     busybox-extras \
     # FTP
     vsftpd \
-    # 内存分配器
-    jemalloc \
-    mimalloc \
     && rm -rf /var/cache/apk/*
 
 # Copy custom scripts
@@ -45,7 +37,11 @@ grep -q '^aid_net_raw:' /etc/group || echo 'aid_net_raw:x:3004:' >> /etc/group
 grep -q '^aid_net_admin:' /etc/group || echo 'aid_net_admin:x:3005:' >> /etc/group
 
 # Root permissions for Android hardware access
-usermod -a -G aid_inet,aid_net_raw,input,video,tty root || true
+addgroup root aid_inet || true
+addgroup root aid_net_raw || true
+addgroup root input || true
+addgroup root video || true
+addgroup root tty || true
 
 # Configure legacy iptables (MANDATORY for Android compatibility)
 ln -sf /usr/sbin/iptables-legacy /usr/sbin/iptables && \
@@ -90,6 +86,8 @@ sed -i '/start() {/a \	if ! grep -q "net_mode=nat" /run/droidspaces/container.co
 echo "Post-extraction fixes applied on $(date)" > /etc/droidspaces
 
 # FTP vsftpd
+mkdir -p /var/run/vsftpd/empty
+chmod 555 /var/run/vsftpd/empty
 mkdir -p /etc/vsftpd
 cat << 'EOF' > /etc/vsftpd/vsftpd.conf
 anonymous_enable=NO
@@ -101,6 +99,7 @@ local_umask=022
 listen=YES
 listen_port=21
 connect_from_port_20=YES
+secure_chroot_dir=/var/run/vsftpd/empty
 # 激进优化
 use_sendfile=YES
 trans_chunk_size=0

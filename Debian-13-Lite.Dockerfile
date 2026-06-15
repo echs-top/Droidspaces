@@ -23,27 +23,22 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     # Core utilities
     bash \
-    file \
     curl \
     wget \
-    git \
     ca-certificates \
-    zstd \
     locales \
+    bash-completion \
     udev \
     dbus \
     systemd-sysv \
     systemd-resolved \
-    sudo \
+    zstd \
     # Networking
     iptables \
     iputils-ping \
     iproute2 \
     # FTP
     vsftpd \
-    # 内存分配器
-    libjemalloc2 \
-    libmimalloc3 \
     # Procps for system monitoring
     procps \
     # Essential kernel module support
@@ -166,7 +161,7 @@ for unit in systemd-resolved.service systemd-networkd.service; do
         cat > "/etc/systemd/system/${unit}.d/99-netmode-limit.conf" << 'EOF'
 [Service]
 ExecCondition=
-ExecCondition=/bin/sh -c "grep -q 'net_mode=nat' /run/droidspaces/container.config"
+ExecCondition=/bin/sh -c "grep -qE 'net_mode=(nat|gateway)' /run/droidspaces/container.config"
 EOF
     fi
 done
@@ -183,6 +178,8 @@ fi
 echo "Post-extraction fixes applied on $(date)" > /etc/droidspaces
 
 # FTP vsftpd
+mkdir -p /var/run/vsftpd/empty
+chmod 555 /var/run/vsftpd/empty
 cat << 'VEOF' > /etc/vsftpd.conf
 anonymous_enable=NO
 local_enable=YES
@@ -193,6 +190,7 @@ local_umask=022
 listen=YES
 listen_port=21
 connect_from_port_20=YES
+secure_chroot_dir=/var/run/vsftpd/empty
 # 激进优化
 use_sendfile=YES
 trans_chunk_size=0
