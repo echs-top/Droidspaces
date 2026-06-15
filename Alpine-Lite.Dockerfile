@@ -86,8 +86,6 @@ sed -i '/start() {/a \	if ! grep -q "net_mode=nat" /run/droidspaces/container.co
 echo "Post-extraction fixes applied on $(date)" > /etc/droidspaces
 
 # FTP vsftpd
-mkdir -p /var/run/vsftpd/empty
-chmod 555 /var/run/vsftpd/empty
 mkdir -p /etc/vsftpd
 cat << 'EOF' > /etc/vsftpd/vsftpd.conf
 anonymous_enable=NO
@@ -99,7 +97,6 @@ local_umask=022
 listen=YES
 listen_port=21
 connect_from_port_20=YES
-secure_chroot_dir=/var/run/vsftpd/empty
 # 激进优化
 use_sendfile=YES
 trans_chunk_size=0

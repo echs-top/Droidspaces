@@ -178,8 +178,6 @@ fi
 echo "Post-extraction fixes applied on $(date)" > /etc/droidspaces
 
 # FTP vsftpd
-mkdir -p /var/run/vsftpd/empty
-chmod 555 /var/run/vsftpd/empty
 cat << 'VEOF' > /etc/vsftpd.conf
 anonymous_enable=NO
 local_enable=YES
@@ -190,7 +188,6 @@ local_umask=022
 listen=YES
 listen_port=21
 connect_from_port_20=YES
-secure_chroot_dir=/var/run/vsftpd/empty
 # 激进优化
 use_sendfile=YES
 trans_chunk_size=0
