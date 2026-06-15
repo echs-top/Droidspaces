@@ -26,6 +26,7 @@ RUN apt-get update && \
     file \
     curl \
     wget \
+    git \
     ca-certificates \
     zstd \
     locales \
@@ -208,12 +209,19 @@ write_enable=YES
 force_dot_files=YES
 file_open_mode=0777
 local_umask=022
-dirmessage_enable=YES
-xferlog_enable=NO
-connect_from_port_20=YES
-trans_chunk_size=131072
 listen=YES
 listen_port=21
+connect_from_port_20=YES
+# 激进优化
+use_sendfile=YES
+trans_chunk_size=0
+tcp_wrappers=NO
+seccomp_sandbox=NO
+xferlog_enable=NO
+syslog_enable=NO
+dirmessage_enable=NO
+delay_failed_login=0
+delay_successful_login=0
 VEOF
 sed -i '/^root$/d' /etc/ftpusers
 ln -sf /lib/systemd/system/vsftpd.service /etc/systemd/system/multi-user.target.wants/vsftpd.service
