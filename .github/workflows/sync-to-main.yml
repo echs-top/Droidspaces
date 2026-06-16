@@ -18,7 +18,7 @@ jobs:
           ref: action
           path: current-action-repo
 
-      # 【核心新增】1.5 提前备份当前主仓库 main 分支的 README.md
+      # 1.5 提前备份当前主仓库 main 分支的 README.md
       - name: Backup Current Main README
         uses: actions/checkout@v4
         with:
@@ -33,7 +33,7 @@ jobs:
         run: |
           git clone https://github.com/Droidspaces/Droidspaces-rootfs-builder.git Droidspaces
 
-      # 3 & 4. 自动替换 Dockerfile 并在本地对目标 Action 文件进行“外科手术”
+      # 3. 自动替换 Dockerfile、配置文件，并在本地对目标 Action 文件进行“外科手术”
       - name: Process Files and Keep Workflow
         run: |
           # 1. 删除外部 Droidspaces 文件夹中原本自带的 *.Dockerfile 文件
@@ -42,24 +42,32 @@ jobs:
           # 2. 自动把你 action 分支根目录下的任何 .Dockerfile 复制到 Droidspaces 文件夹中
           cp current-action-repo/*.Dockerfile Droidspaces/
           
+          # 【新增核心修复】：把 action 分支中自定义的 rootfs.json 覆盖进去
+          if [ -f "current-action-repo/rootfs.json" ]; then
+            cp current-action-repo/rootfs.json Droidspaces/rootfs.json
+            echo "成功使用 action 分支的自定义 rootfs.json 覆盖上游配置"
+          else
+            echo "警告：在 action 分支未找到 rootfs.json，将使用上游默认配置"
+          fi
+          
           # 3. 确保 Droidspaces 文件夹中存在 .github/workflows 目录
           mkdir -p Droidspaces/.github/workflows
           
-          # 4. 【核心修复】：动态剔除外部工作流中写死的 NixOS 任务，并修改 release 的依赖
+          # 4. 动态剔除外部工作流中写死的 NixOS 任务，并修改 release 的依赖
           if [ -f "Droidspaces/.github/workflows/build-rootfs-releases.yml" ]; then
             yq eval 'del(.jobs.build-nixos) | .jobs.release.needs = ["setup", "build"]' -i Droidspaces/.github/workflows/build-rootfs-releases.yml
           fi
           
-          # 【新增自动化修改】：动态替换脚本中的默认上游仓库为个人仓库
+          # 5. 动态替换脚本中的默认上游仓库为个人仓库
           if [ -f "Droidspaces/scripts/update_rootfs_json.py" ]; then
             sed -i 's|Droidspaces/Droidspaces-rootfs-builder|echs-top/Droidspaces|g' Droidspaces/scripts/update_rootfs_json.py
             echo "已成功将 update_rootfs_json.py 中的默认仓库地址修改为 echs-top/Droidspaces"
           fi
           
-          # 5. 将此同步工作流文件自身复制过去，确保覆盖后的 main 分支也常驻此文件
+          # 6. 将此同步工作流文件自身复制过去，确保覆盖后的 main 分支也常驻此文件
           cp current-action-repo/.github/workflows/sync-to-main.yml Droidspaces/.github/workflows/
 
-          # 【核心新增】6. 把备份的 README.md 强行覆盖回 Droidspaces 目录
+          # 7. 把备份的 README.md 强行覆盖回 Droidspaces 目录
           if [ -f "current-main-readme/README.md" ]; then
             cp current-main-readme/README.md Droidspaces/README.md
             echo "成功恢复并保留了 main 分支的原生 README.md"
@@ -69,7 +77,7 @@ jobs:
             echo "未在新 main 分支检测到 README，已使用 action 分支的 README.md 顶替"
           fi
 
-      # 5. 清空旧 main 分支并用全新内容强制覆盖
+      # 4. 清空旧 main 分支并用全新内容强制覆盖
       - name: Initialize New Git and Push to Main
         run: |
           cd Droidspaces
@@ -85,7 +93,7 @@ jobs:
           # 创建并切换到 main 分支
           git checkout -b main
           
-          # 暂存所有文件（此时这里的 README.md 已经是你原本保留的内容了）
+          # 暂存所有文件
           git add -A
           
           # 提交本地修改
