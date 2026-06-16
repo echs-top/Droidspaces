@@ -1,0 +1,56 @@
+#!/bin/sh
+
+ENV_FILE=/run/droidspaces.env
+CONFIG=/run/droidspaces/container.config
+
+# 1. Parse Initial Environment Variables
+if [ -f "$ENV_FILE" ]; then
+    . "$ENV_FILE"
+else
+    export DISPLAY=:5
+    if grep -q 'enable_pulseaudio=1' "$CONFIG" 2>/dev/null; then
+        export PULSE_SERVER=unix:/tmp/.pulse-socket
+    fi
+    if grep -q 'enable_virgl=1' "$CONFIG" 2>/dev/null; then
+        export GALLIUM_DRIVER=virpipe
+    fi
+fi
+
+# 2. Check User and Launch Desktop
+if [ -n "$XFCE_USER" ] && [ "$XFCE_USER" != "root" ]; then
+
+    # Fetch the target user's numeric UID and prepare XDG runtime dir
+    USER_UID=$(id -u "$XFCE_USER")
+    TARGET_XDG="/run/user/$USER_UID"
+
+    # Unconditionally create/heal the runtime directory and force correct permissions
+    mkdir -p "$TARGET_XDG"
+    chown "$XFCE_USER" "$TARGET_XDG"
+    chmod 700 "$TARGET_XDG"
+
+    # Grant ownership of sockets and X11 lock file to the target user
+    [ -S /tmp/.X11-unix/X5 ] && chown "$XFCE_USER" /tmp/.X11-unix/X5
+    [ -f /tmp/.X5-lock ]      && chown "$XFCE_USER" /tmp/.X5-lock
+    [ -S /tmp/.pulse-socket ] && chown "$XFCE_USER" /tmp/.pulse-socket
+    [ -S /tmp/.virgl_test ]   && chown "$XFCE_USER" /tmp/.virgl_test
+
+    # Build dynamic env whitelist, excluding root-specific or session-poisoning vars
+    SAFE_ENV=$(env | awk -F= '{print $1}' \
+        | grep -vE '^(HOME|USER|LOGNAME|PWD|SHELL|XDG_RUNTIME_DIR|MAIL|SHLVL|_)$' \
+        | tr '\n' ',' | sed 's/,$//')
+
+    # Drop privileges and launch XFCE under a clean login shell
+    exec su -l -w "$SAFE_ENV" "$XFCE_USER" -c '
+        export XDG_RUNTIME_DIR='"$TARGET_XDG"'
+        exec /usr/bin/startxfce4'
+else
+    # Warn and fall back to root execution
+    if [ "$XFCE_USER" = "root" ]; then
+        echo "Warning: XFCE_USER=root, running desktop as root" >&2
+    fi
+
+    mkdir -p /run/user/0
+    chmod 700 /run/user/0
+    export XDG_RUNTIME_DIR=/run/user/0
+    exec /usr/bin/startxfce4
+fi

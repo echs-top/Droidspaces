@@ -1,0 +1,16 @@
+[
+  {
+    "name": "Alpine Linux - Lite",
+    "distro": "Alpine",
+    "description": "Custom Alpine Linux rootfs.",
+    "architecture": "aarch64",
+    "file": "Alpine-Lite"
+  },
+  {
+    "name": "Debian 13 - Lite",
+    "distro": "Debian",
+    "description": "Custom Debian 13 rootfs.",
+    "architecture": "aarch64",
+    "file": "Debian-13-Lite"
+  }
+]
