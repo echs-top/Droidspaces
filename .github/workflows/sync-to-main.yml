@@ -50,6 +50,12 @@ jobs:
             yq eval 'del(.jobs.build-nixos) | .jobs.release.needs = ["setup", "build"]' -i Droidspaces/.github/workflows/build-rootfs-releases.yml
           fi
           
+          # 【新增自动化修改】：动态替换脚本中的默认上游仓库为个人仓库
+          if [ -f "Droidspaces/scripts/update_rootfs_json.py" ]; then
+            sed -i 's|Droidspaces/Droidspaces-rootfs-builder|echs-top/Droidspaces|g' Droidspaces/scripts/update_rootfs_json.py
+            echo "已成功将 update_rootfs_json.py 中的默认仓库地址修改为 echs-top/Droidspaces"
+          fi
+          
           # 5. 将此同步工作流文件自身复制过去，确保覆盖后的 main 分支也常驻此文件
           cp current-action-repo/.github/workflows/sync-to-main.yml Droidspaces/.github/workflows/
 
