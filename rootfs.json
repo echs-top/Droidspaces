@@ -5,12 +5,12 @@
     "description": "Custom Alpine Linux rootfs.",
     "architecture": "aarch64",
     "file": "Alpine-Lite",
-    "download_url": "https://github.com/echs-top/Droidspaces/releases/download/v20260927-045809/Alpine-Lite-Droidspaces-rootfs-aarch64-20260927-v20260927-045809.tar.xz",
-    "size_bytes": 6162800,
-    "version": "v20260927-045809",
-    "build_date": "20260927",
+    "download_url": "https://github.com/echs-top/Droidspaces/releases/download/v20261004-053045/Alpine-Lite-Droidspaces-rootfs-aarch64-20261004-v20261004-053045.tar.xz",
+    "size_bytes": 6166208,
+    "version": "v20261004-053045",
+    "build_date": "20261004",
     "author": "Droidspaces developers",
-    "sha256": "1c09699e681f99745a4dba5c8d2dd7fd8b4a4eca808a1fe56ba3369eb48f8f4b"
+    "sha256": "7794af3f0f080f788271bfc9edc3f99a9b2b614284524f8ac651846c00b55995"
   },
   {
     "name": "Debian 13 - Lite",
@@ -18,11 +18,11 @@
     "description": "Custom Debian 13 rootfs.",
     "architecture": "aarch64",
     "file": "Debian-13-Lite",
-    "download_url": "https://github.com/echs-top/Droidspaces/releases/download/v20260927-045809/Debian-13-Lite-Droidspaces-rootfs-aarch64-20260927-v20260927-045809.tar.xz",
-    "size_bytes": 52441872,
-    "version": "v20260927-045809",
-    "build_date": "20260927",
+    "download_url": "https://github.com/echs-top/Droidspaces/releases/download/v20261004-053045/Debian-13-Lite-Droidspaces-rootfs-aarch64-20261004-v20261004-053045.tar.xz",
+    "size_bytes": 52437320,
+    "version": "v20261004-053045",
+    "build_date": "20261004",
     "author": "Droidspaces developers",
-    "sha256": "39f7e6cbd68efb8d4f8eeeabcab6db3cf2387434aaee3c5a7027fee2f485c753"
+    "sha256": "14017fda0b7a253d0c143c428a565260ef4215a25f6ad0ddf6cbf9d8a62aeb91"
   }
 ]
